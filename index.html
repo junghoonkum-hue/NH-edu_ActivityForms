@@ -140,17 +140,25 @@
           
           <!-- 상단 헤더 -->
           <div>
-            <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2">
+            <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2 relative">
               <h2 class="text-4xl font-black tracking-tight text-slate-900">우리 팀을 소개 합니다.</h2>
-              <div class="flex items-center gap-4">
-                <div class="text-xl font-bold flex items-end">
+              <div class="flex items-end gap-5">
+                <div class="text-xl font-bold flex items-end mb-0.5">
                   <span>팀</span>
                   <span id="out-teamNum" class="inline-block w-28 text-center border-b-2 border-slate-700 ml-2 text-2xl font-black text-emerald-800">1</span>
                 </div>
-                <!-- 농협 심볼 스타일 -->
-                <div class="flex flex-col items-center justify-center text-slate-700 font-black leading-none select-none">
-                  <span class="text-lg">ㄴ</span>
-                  <span class="text-lg -mt-1.5 ml-2">ㅎ</span>
+                <!-- 원본 농협 심볼 정밀 벡터 이미지 (SVG) -->
+                <div class="select-none shrink-0 mb-1" aria-label="농협 심볼">
+                  <svg width="46" height="44" viewBox="0 0 100 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- 좌측 상단 'ㄴ' 획 -->
+                    <path d="M12 10 H25 V40 H54 V52 H12 V10 Z" fill="#1e293b"/>
+                    <!-- 우측 상단 'ㅎ'의 독특한 사선/곡선 꼭지 -->
+                    <path d="M58 14 C65 11, 74 11, 80 15 L75 24 C70 21, 64 21, 58 24 Z" fill="#1e293b"/>
+                    <!-- 'ㅎ'의 가로획 -->
+                    <path d="M46 31 H90 V42 H46 V31 Z" fill="#1e293b"/>
+                    <!-- 'ㅎ'의 하단 동그라미(ㅇ) -->
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M68 48 C81.2548 48 92 58.0736 92 70.5 C92 82.9264 81.2548 93 68 93 C54.7452 93 44 82.9264 44 70.5 C44 58.0736 54.7452 48 68 48 Z M68 59 C61.3726 59 56 64.1487 56 70.5 C56 76.8513 61.3726 82 68 82 C74.6274 82 80 76.8513 80 70.5 C80 64.1487 74.6274 59 68 59 Z" fill="#1e293b"/>
+                  </svg>
                 </div>
               </div>
             </div>
@@ -220,7 +228,8 @@
     // [설정 영역] Supabase에서 복사한 URL과 ANON KEY를 입력하세요
     // =========================================================
     const SUPABASE_URL = 'https://qdadogyvizwlurcnyvvg.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkYWRvZ3l2aXp3bHVyY255dnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDc2ODMsImV4cCI6MjExMDk4MzY4M30.Mb-81BsLFj1necQTVjAIlfsZPONcPrpEvDrs2do-7jE';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkYWRvZ3l2aXp3bHVyY255dnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDc2ODMsImV4cCI6MjExMDk4MzY4M30.Mb-81BsLFj1necQTVjAIlfsZPONcPrpEvDrs2do-7jE
+';
     // =========================================================
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -233,7 +242,6 @@
     let isHandwriting = false;
     let realtimeChannel = null;
 
-    // 초기 빈 데이터 구조
     function getEmptyData() {
       return {
         teamName: '',
@@ -253,7 +261,6 @@
 
     let currentData = getEmptyData();
 
-    // 입력 카드 6개 및 출력 양식 6개 박스 초기 생성
     function initGrids() {
       const inGrid = document.getElementById('memberInputsGrid');
       const outGrid = document.getElementById('out-membersGrid');
@@ -261,7 +268,6 @@
       outGrid.innerHTML = '';
 
       for (let i = 0; i < 6; i++) {
-        // 모바일 입력 카드
         inGrid.innerHTML += `
           <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
             <div class="text-xs font-bold text-emerald-700">팀원 ${i + 1}</div>
@@ -272,7 +278,6 @@
           </div>
         `;
 
-        // 원본 양식 박스
         outGrid.innerHTML += `
           <div class="border border-slate-600 flex flex-col">
             <div class="member-header-bar border-b border-slate-600 px-3 py-1.5 flex items-center h-10">
@@ -287,7 +292,6 @@
         `;
       }
 
-      // 모든 입력창에 자동 저장 이벤트(blur / Enter) 연결
       document.querySelectorAll('input').forEach(input => {
         input.addEventListener('blur', saveData);
         input.addEventListener('keydown', (e) => {
@@ -298,7 +302,6 @@
       });
     }
 
-    // 화면에 데이터 반영 (현재 타이핑 중인 칸은 덮어쓰지 않아 충돌 방지)
     function renderData(data) {
       currentData = data;
       const activeId = document.activeElement ? document.activeElement.id : '';
@@ -323,18 +326,15 @@
       }
     }
 
-    // Supabase에서 현재 팀 데이터 불러오기 & 실시간 구독 시작
     async function loadTeamSheet(teamNum) {
       currentTeam = teamNum;
       const docId = `intro_team_${teamNum}`;
       setStatus('🟡 불러오는 중...', 'bg-amber-100 text-amber-800');
 
-      // 기존 실시간 채널 해제
       if (realtimeChannel) {
         supabaseClient.removeChannel(realtimeChannel);
       }
 
-      // DB 조회
       const { data, error } = await supabaseClient
         .from('workshop_sheets')
         .select('*')
@@ -350,7 +350,6 @@
       if (data && data.content) {
         renderData(data.content);
       } else {
-        // 데이터가 없으면 빈 데이터로 초기화 생성
         const empty = getEmptyData();
         renderData(empty);
         await supabaseClient.from('workshop_sheets').upsert({
@@ -364,7 +363,6 @@
       setStatus(`🟢 ${teamNum}팀 실시간 연결됨`, 'bg-emerald-100 text-emerald-800');
       updateQRCode();
 
-      // 실시간 변경 감지 구독 (다른 팀원/PC에서 수정 시 즉시 수신)
       realtimeChannel = supabaseClient
         .channel(`room_${docId}`)
         .on('postgres_changes', {
@@ -382,7 +380,6 @@
         .subscribe();
     }
 
-    // 입력값 수집 후 Supabase에 저장
     async function saveData() {
       const docId = `intro_team_${currentTeam}`;
       const updated = {
@@ -424,7 +421,6 @@
       el.className = `text-xs font-bold px-2.5 py-1 rounded-full ${classes}`;
     }
 
-    // 탭 전환
     function switchTab(tab) {
       ['input', 'sheet', 'qr'].forEach(t => {
         document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
@@ -438,7 +434,6 @@
       if (tab === 'qr') updateQRCode();
     }
 
-    // QR코드 생성
     function updateQRCode() {
       const baseUrl = window.location.origin + window.location.pathname;
       const teamUrl = `${baseUrl}?team=${currentTeam}`;
@@ -457,7 +452,6 @@
       });
     }
 
-    // 손글씨 폰트 토글
     function toggleHandwriting() {
       isHandwriting = !isHandwriting;
       const btn = document.getElementById('btnHandwriting');
@@ -467,7 +461,6 @@
       });
     }
 
-    // 원본 양식 PNG 다운로드
     function downloadImage() {
       const target = document.getElementById('printableSheet');
       html2canvas(target, { scale: 2 }).then(canvas => {
@@ -478,7 +471,6 @@
       });
     }
 
-    // 팀 변경 이벤트
     document.getElementById('teamSelector').addEventListener('change', (e) => {
       const newTeam = parseInt(e.target.value);
       const newUrl = `${window.location.pathname}?team=${newTeam}`;
@@ -486,7 +478,6 @@
       loadTeamSheet(newTeam);
     });
 
-    // 실행 시작
     initGrids();
     loadTeamSheet(currentTeam);
   </script>
