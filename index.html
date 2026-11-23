@@ -52,7 +52,7 @@
         <span id="syncStatus" class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
           🟡 연결 중...
         </span>
-        <select id="teamSelector" class="border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-bold rounded-lg px-3 py-1 text-sm focus:outline-none">
+        <select id="teamSelector" onchange="handleTeamChange(this.value)" class="border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-bold rounded-lg px-3 py-1 text-sm focus:outline-none">
           <option value="1">1팀</option>
           <option value="2">2팀</option>
           <option value="3">3팀</option>
@@ -69,10 +69,10 @@
     <div class="bg-emerald-900 text-white px-4 py-1.5 overflow-x-auto">
       <div class="max-w-5xl mx-auto flex items-center gap-2 text-xs sm:text-sm">
         <span class="text-emerald-300 font-bold shrink-0 mr-1">활동 선택:</span>
-        <button onclick="switchSheetType('intro')" id="btn-type-intro" class="px-3 py-1 rounded-md font-bold bg-white text-emerald-900 shrink-0">
+        <button type="button" onclick="switchSheetType('intro')" id="btn-type-intro" class="px-3 py-1 rounded-md font-bold bg-white text-emerald-900 shrink-0">
           1. 우리 팀 소개
         </button>
-        <button onclick="switchSheetType('problem')" id="btn-type-problem" class="px-3 py-1 rounded-md font-bold text-emerald-100 hover:bg-emerald-800 shrink-0">
+        <button type="button" onclick="switchSheetType('problem')" id="btn-type-problem" class="px-3 py-1 rounded-md font-bold text-emerald-100 hover:bg-emerald-800 shrink-0">
           2. 1단계 문제발견 및 문제정의
         </button>
       </div>
@@ -80,13 +80,13 @@
 
     <!-- 모드 전환 탭 -->
     <div class="max-w-5xl mx-auto px-4 flex border-t border-slate-100 bg-slate-50">
-      <button onclick="switchTab('input')" id="tab-input" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700 bg-white">
+      <button type="button" onclick="switchTab('input')" id="tab-input" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700 bg-white">
         📱 모바일 입력/수정
       </button>
-      <button onclick="switchTab('sheet')" id="tab-sheet" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+      <button type="button" onclick="switchTab('sheet')" id="tab-sheet" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
         📄 원본 양식 보기 (발표용)
       </button>
-      <button onclick="switchTab('qr')" id="tab-qr" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+      <button type="button" onclick="switchTab('qr')" id="tab-qr" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
         📲 QR코드 띄우기
       </button>
     </div>
@@ -99,7 +99,7 @@
       <span>💡 칸을 입력하고 다른 곳을 누르면 팀원 전체 화면에 즉시 반영됩니다.</span>
       <div class="flex items-center gap-2">
         <span id="lastUpdatedText" class="text-xs text-blue-600 font-medium"></span>
-        <button onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
+        <button type="button" onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
           지금 반영
         </button>
       </div>
@@ -109,7 +109,6 @@
     <!-- [양식 1] 우리 팀을 소개 합니다.                             -->
     <!-- ========================================================= -->
     <div id="form-intro">
-      <!-- 1-1. 모바일 입력 화면 -->
       <section id="view-input-intro" class="space-y-5">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
           <label class="block text-xs font-bold text-slate-500 mb-1">구역 ① 팀 이름</label>
@@ -145,13 +144,12 @@
         </div>
       </section>
 
-      <!-- 1-2. 원본 양식 보기 -->
       <section id="view-sheet-intro" class="hidden space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-          <button onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
+          <button type="button" onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
             ✍️ 손글씨 느낌: OFF
           </button>
-          <button onclick="downloadImage('printableSheetIntro', '우리팀을소개합니다')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
+          <button type="button" onclick="downloadImage('printableSheetIntro', '우리팀을소개합니다')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
             📥 양식 이미지(.png) 저장
           </button>
         </div>
@@ -210,7 +208,6 @@
     <!-- [양식 2] 1단계 문제발견 및 문제정의                       -->
     <!-- ========================================================= -->
     <div id="form-problem" class="hidden">
-      <!-- 2-1. 모바일 입력 화면 -->
       <section id="view-input-problem" class="space-y-5">
         <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-4">
           <div class="border-b border-slate-100 pb-2 font-bold text-sm text-emerald-800">좌측 영역: 상황 파악 및 해결할 문제 도출</div>
@@ -263,21 +260,18 @@
         </div>
       </section>
 
-      <!-- 2-2. 원본 양식 보기 (1단계 문제발견 및 문제정의) -->
       <section id="view-sheet-problem" class="hidden space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
-          <button onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
+          <button type="button" onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
             ✍️ 손글씨 느낌: OFF
           </button>
-          <button onclick="downloadImage('printableSheetProblem', '1단계_문제발견_문제정의')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
+          <button type="button" onclick="downloadImage('printableSheetProblem', '1단계_문제발견_문제정의')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
             📥 양식 이미지(.png) 저장
           </button>
         </div>
 
         <div class="overflow-x-auto pb-4 flex justify-start lg:justify-center">
           <div id="printableSheetProblem" class="sheet-paper p-7 flex flex-col justify-between shrink-0 relative">
-            
-            <!-- 상단 헤더 (통일된 팀 밑줄 + nh-nong-logo.png h-14) -->
             <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2 mb-3">
               <h2 class="text-4xl font-black tracking-tight text-slate-900 leading-normal">1단계 문제발견 및 문제정의</h2>
               <div class="flex items-end gap-5">
@@ -292,12 +286,8 @@
               </div>
             </div>
 
-            <!-- 본문 좌우 2단 레이아웃 -->
             <div class="flex-1 grid grid-cols-12 gap-4 min-h-0">
-              
-              <!-- 좌측 7칸: 상황 선정 / 상황 구체화 / 해결할 문제 -->
               <div class="col-span-7 border border-slate-500 flex flex-col">
-                <!-- 상황 선정 -->
                 <div class="grid grid-cols-12 border-b border-slate-500 min-h-[58px]">
                   <div class="col-span-2 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     상황<br/>선정
@@ -307,7 +297,6 @@
                   </div>
                 </div>
 
-                <!-- 상황 구체화 (내용 4줄) -->
                 <div class="grid grid-cols-12 border-b border-slate-500 flex-1">
                   <div class="col-span-2 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     상황<br/>구체화
@@ -333,7 +322,6 @@
                   </div>
                 </div>
 
-                <!-- 해결할 문제 -->
                 <div class="grid grid-cols-12 min-h-[82px]">
                   <div class="col-span-2 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     해결할<br/>문제
@@ -344,9 +332,7 @@
                 </div>
               </div>
 
-              <!-- 우측 5칸: 문제 핵심 / 검토 범위 / 해결 성공 기준 -->
               <div class="col-span-5 border border-slate-500 flex flex-col divide-y divide-slate-500">
-                <!-- 문제 핵심 -->
                 <div class="grid grid-cols-12 flex-1">
                   <div class="col-span-3 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     문제<br/>핵심
@@ -356,7 +342,6 @@
                   </div>
                 </div>
 
-                <!-- 검토 범위 -->
                 <div class="grid grid-cols-12 flex-1">
                   <div class="col-span-3 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     검토<br/>범위
@@ -366,7 +351,6 @@
                   </div>
                 </div>
 
-                <!-- 해결 성공 기준 -->
                 <div class="grid grid-cols-12 flex-[1.2]">
                   <div class="col-span-3 label-box-dark flex items-center justify-center text-center font-extrabold text-base leading-tight p-1">
                     해결<br/>성공<br/>기준
@@ -376,7 +360,6 @@
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -417,8 +400,8 @@
 
     let supabaseClient = null;
     try {
-      if (SUPABASE_URL.startsWith('http')) {
-        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (window.supabase && SUPABASE_URL && SUPABASE_URL.trim().startsWith('http')) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL.trim(), SUPABASE_ANON_KEY.trim());
       }
     } catch (e) {
       console.error('Supabase 초기화 오류:', e);
@@ -426,10 +409,8 @@
 
     const urlParams = new URLSearchParams(window.location.search);
     let currentTeam = parseInt(urlParams.get('team')) || 1;
-    let currentSheetType = urlParams.get('type') || 'intro'; // 'intro' | 'problem'
-    let currentViewTab = 'input'; // 'input' | 'sheet' | 'qr'
-
-    document.getElementById('teamSelector').value = currentTeam;
+    let currentSheetType = urlParams.get('type') === 'problem' ? 'problem' : 'intro';
+    let currentViewTab = 'input';
 
     let isHandwriting = false;
     let realtimeChannel = null;
@@ -446,21 +427,21 @@
           members: Array.from({ length: 6 }, () => ({ role: '', name: '' }))
         };
       }
-      if (type === 'problem') {
-        return {
-          situation: '',
-          detail1: '', detail2: '', detail3: '', detail4: '',
-          question: '',
-          core: '',
-          scope: '',
-          criteria: ''
-        };
-      }
+      return {
+        situation: '',
+        detail1: '', detail2: '', detail3: '', detail4: '',
+        question: '',
+        core: '',
+        scope: '',
+        criteria: ''
+      };
     }
 
     function initGrids() {
       const inGrid = document.getElementById('memberInputsGrid');
       const outGrid = document.getElementById('out-membersGrid');
+      if (!inGrid || !outGrid) return;
+
       inGrid.innerHTML = '';
       outGrid.innerHTML = '';
 
@@ -501,7 +482,9 @@
 
     function renderData(type, data) {
       const activeId = document.activeElement ? document.activeElement.id : '';
-      document.querySelectorAll('.out-teamNum-display').forEach(el => el.textContent = currentTeam);
+      document.querySelectorAll('.out-teamNum-display').forEach(el => {
+        el.textContent = currentTeam;
+      });
 
       if (type === 'intro') {
         if (activeId !== 'in-teamName') document.getElementById('in-teamName').value = data.teamName || '';
@@ -536,14 +519,18 @@
       currentTeam = teamNum;
       currentSheetType = sheetType;
 
-      // URL 상태 동기화
-      const newUrl = `${window.location.pathname}?team=${currentTeam}&type=${currentSheetType}`;
-      window.history.replaceState({}, '', newUrl);
+      const selector = document.getElementById('teamSelector');
+      if (selector) selector.value = currentTeam;
 
-      // 헤더 및 활동 버튼 UI 갱신
+      try {
+        const newUrl = `${window.location.pathname}?team=${currentTeam}&type=${currentSheetType}`;
+        window.history.replaceState({}, '', newUrl);
+      } catch (e) {}
+
       document.getElementById('headerTitle').textContent = SHEET_TITLES[sheetType];
       ['intro', 'problem'].forEach(t => {
         const btn = document.getElementById(`btn-type-${t}`);
+        if (!btn) return;
         if (t === sheetType) {
           btn.className = 'px-3 py-1 rounded-md font-bold bg-white text-emerald-900 shrink-0 shadow-sm';
         } else {
@@ -662,8 +649,13 @@
 
     function setStatus(text, classes) {
       const el = document.getElementById('syncStatus');
+      if (!el) return;
       el.textContent = text;
       el.className = `text-xs font-bold px-2.5 py-1 rounded-full ${classes}`;
+    }
+
+    function handleTeamChange(val) {
+      loadSheet(parseInt(val) || 1, currentSheetType);
     }
 
     function switchSheetType(type) {
@@ -674,6 +666,7 @@
       currentViewTab = tab;
       ['input', 'sheet', 'qr'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
+        if (!btn) return;
         if (t === tab) {
           btn.className = 'flex-1 py-2.5 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700 bg-white';
         } else {
@@ -691,6 +684,7 @@
 
       ['intro', 'problem'].forEach(type => {
         const formWrapper = document.getElementById(`form-${type}`);
+        if (!formWrapper) return;
         if (type !== currentSheetType || isQR) {
           formWrapper.classList.add('hidden');
         } else {
@@ -753,8 +747,10 @@
       });
     }
 
-    document.getElementById('teamSelector').addEventListener('change', (e) => {
-      loadSheet(parseInt(e.target.value), currentSheetType);
+    window.addEventListener('DOMContentLoaded', () => {
+      initGrids();
+      loadSheet(currentTeam, currentSheetType);
     });
-
-    init
+  </script>
+</body>
+</html>
