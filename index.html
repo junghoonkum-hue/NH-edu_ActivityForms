@@ -25,7 +25,6 @@
     .member-header-bar {
       background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
     }
-    /* html2canvas 캡처 시 글자 아랫부분 잘림 방지 */
     .sheet-text {
       line-height: 1.45 !important;
       padding-bottom: 2px;
@@ -149,11 +148,15 @@
             <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2 relative">
               <h2 class="text-4xl font-black tracking-tight text-slate-900 leading-normal">우리 팀을 소개 합니다.</h2>
               <div class="flex items-end gap-5">
-                <div class="text-xl font-bold flex items-baseline mb-1">
-                  <span>팀</span>
-                  <span id="out-teamNum" class="inline-block w-28 text-center border-b-2 border-slate-700 ml-2 pb-1 text-2xl font-black text-emerald-800 leading-none">1</span>
+                <!-- 팀 번호 및 하단 분리 밑줄 -->
+                <div class="text-xl font-bold flex items-end mb-1">
+                  <span class="leading-none pb-1.5">팀</span>
+                  <div class="relative inline-flex flex-col items-center w-28 ml-2">
+                    <span id="out-teamNum" class="text-2xl font-black text-emerald-800 leading-none pb-2">1</span>
+                    <span class="w-full h-[2px] bg-slate-700 block"></span>
+                  </div>
                 </div>
-                <!-- 농협 로고 이미지 (h-14 적용) -->
+                <!-- 농협 로고 이미지 (nh-nong-logo.png, h-14 적용) -->
                 <img src="./nh-nong-logo.png" alt="농협 심볼" class="h-14 w-auto object-contain shrink-0 mb-0.5" />
               </div>
             </div>
@@ -278,7 +281,6 @@
           </div>
         `;
 
-        // truncate 및 고정 높이로 인한 글자 받침 잘림 현상 해결
         outGrid.innerHTML += `
           <div class="border border-slate-600 flex flex-col">
             <div class="member-header-bar border-b border-slate-600 px-3 py-2 flex items-baseline min-h-[42px]">
@@ -478,7 +480,6 @@
       });
     }
 
-    // 캡처 시 글자 위치와 받침이 밀리거나 잘리지 않도록 보정하여 PNG 저장
     function downloadImage() {
       const target = document.getElementById('printableSheet');
       html2canvas(target, {
@@ -486,7 +487,6 @@
         useCORS: true,
         backgroundColor: '#ffffff',
         onclone: (clonedDoc) => {
-          // 캡처 전용 복제 화면에서 텍스트 수직 위치 미세 상향 보정
           clonedDoc.querySelectorAll('.sheet-text').forEach(el => {
             el.style.transform = 'translateY(-3px)';
           });
