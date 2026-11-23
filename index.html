@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>우리 팀을 소개 합니다. - 실시간 팀 워크시트</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; }
+    .font-handwriting { font-family: 'Nanum Pen Script', cursive; font-size: 1.45em !important; line-height: 1.2 !important; color: #1e293b; }
+    .sheet-paper {
+      width: 1000px;
+      height: 680px;
+      background: #ffffff;
+      border: 2px solid #334155;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+    }
+    .gradient-bar {
+      background: linear-gradient(90deg, #cbd5e1 0%, #f1f5f9 50%, #cbd5e1 100%);
+    }
+    .member-header-bar {
+      background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
+    }
+  </style>
+</head>
+<body class="text-slate-800 pb-20">
+
+  <!-- 상단 고정 바 -->
+  <header class="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="bg-emerald-600 text-white text-xs font-bold px-2 py-1 rounded">NH 협업시트</span>
+        <h1 class="font-bold text-base sm:text-lg text-slate-900">우리 팀을 소개 합니다.</h1>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <span id="syncStatus" class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
+          🟡 연결 중...
+        </span>
+        <select id="teamSelector" class="border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-bold rounded-lg px-3 py-1.5 text-sm focus:outline-none">
+          <option value="1">1팀</option>
+          <option value="2">2팀</option>
+          <option value="3">3팀</option>
+          <option value="4">4팀</option>
+          <option value="5">5팀</option>
+          <option value="6">6팀</option>
+          <option value="7">7팀</option>
+          <option value="8">8팀</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- 모드 전환 탭 -->
+    <div class="max-w-5xl mx-auto px-4 flex border-t border-slate-100 bg-slate-50">
+      <button onclick="switchTab('input')" id="tab-input" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700 bg-white">
+        📱 모바일 입력/수정
+      </button>
+      <button onclick="switchTab('sheet')" id="tab-sheet" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+        📄 원본 양식 보기 (발표용)
+      </button>
+      <button onclick="switchTab('qr')" id="tab-qr" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
+        📲 QR코드 띄우기
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 pt-5">
+    
+    <!-- 1. 모바일 입력/수정 화면 -->
+    <section id="view-input" class="space-y-5">
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs sm:text-sm text-blue-800 flex items-center justify-between">
+        <span>💡 칸을 입력하고 다른 곳을 누르면 팀원 전체 화면에 즉시 반영됩니다.</span>
+        <span id="lastUpdatedText" class="text-xs text-blue-600 font-medium"></span>
+      </div>
+
+      <!-- 구역 1: 팀 이름 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+        <label class="block text-xs font-bold text-slate-500 mb-1">구역 ① 팀 이름</label>
+        <input type="text" id="in-teamName" placeholder="예: 2심천심, 파이브 코어 등 팀명을 입력하세요"
+          class="w-full text-base font-bold border border-slate-300 rounded-xl px-3.5 py-2.5 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none" />
+      </div>
+
+      <!-- 구역 2: 그라운드 룰 -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200 space-y-3">
+        <div class="flex items-center justify-between">
+          <label class="block text-xs font-bold text-slate-500">구역 ② 그라운드 룰 (팀 약속 3가지)</label>
+          <span class="text-xs text-slate-400">누구나 수정 가능</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-emerald-700 w-5">1.</span>
+          <input type="text" id="in-rule1" placeholder="첫 번째 약속 (예: 경청하며 리액션하기)"
+            class="flex-1 text-sm border border-slate-300 rounded-xl px-3 py-2 focus:border-emerald-500 outline-none" />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-emerald-700 w-5">2.</span>
+          <input type="text" id="in-rule2" placeholder="두 번째 약속 (예: 시간 엄수하기)"
+            class="flex-1 text-sm border border-slate-300 rounded-xl px-3 py-2 focus:border-emerald-500 outline-none" />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-emerald-700 w-5">3.</span>
+          <input type="text" id="in-rule3" placeholder="세 번째 약속 (예: 긍정적 에너지 나누기)"
+            class="flex-1 text-sm border border-slate-300 rounded-xl px-3 py-2 focus:border-emerald-500 outline-none" />
+        </div>
+      </div>
+
+      <!-- 구역 3: 팀원 소개 (6칸) -->
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <label class="block text-xs font-bold text-slate-500">구역 ③ 팀원을 소개합니다 (각자 본인 칸 입력)</label>
+          <button onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
+            지금 전체 반영
+          </button>
+        </div>
+        <div id="memberInputsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <!-- JS로 6개 카드 생성 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 원본 양식 보기 (발표 및 이미지 저장용) -->
+    <section id="view-sheet" class="hidden space-y-4">
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+        <div class="flex items-center gap-2">
+          <button onclick="toggleHandwriting()" id="btnHandwriting" class="px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
+            ✍️ 손글씨 느낌: OFF
+          </button>
+        </div>
+        <button onclick="downloadImage()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
+          📥 양식 이미지(.png) 저장
+        </button>
+      </div>
+
+      <!-- 가로 스크롤 컨테이너 -->
+      <div class="overflow-x-auto pb-4 flex justify-start lg:justify-center">
+        <div id="printableSheet" class="sheet-paper p-8 flex flex-col justify-between shrink-0 relative">
+          
+          <!-- 상단 헤더 -->
+          <div>
+            <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2">
+              <h2 class="text-4xl font-black tracking-tight text-slate-900">우리 팀을 소개 합니다.</h2>
+              <div class="flex items-center gap-4">
+                <div class="text-xl font-bold flex items-end">
+                  <span>팀</span>
+                  <span id="out-teamNum" class="inline-block w-28 text-center border-b-2 border-slate-700 ml-2 text-2xl font-black text-emerald-800">1</span>
+                </div>
+                <!-- 농협 심볼 스타일 -->
+                <div class="flex flex-col items-center justify-center text-slate-700 font-black leading-none select-none">
+                  <span class="text-lg">ㄴ</span>
+                  <span class="text-lg -mt-1.5 ml-2">ㅎ</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 팀 이름 바 -->
+            <div class="gradient-bar border border-slate-400 mt-1 px-4 py-2.5 flex items-center">
+              <span class="text-xl font-extrabold text-slate-900 mr-3 shrink-0">팀 이름 :</span>
+              <span id="out-teamName" class="text-2xl font-bold text-slate-800 sheet-text"></span>
+            </div>
+          </div>
+
+          <!-- 중단 그라운드 룰 -->
+          <div class="bg-slate-100/80 border border-slate-300 rounded-sm p-5 my-3 flex-1 flex flex-col justify-between">
+            <div class="text-center font-black text-xl text-slate-900 tracking-wide">그라운드 룰</div>
+            <div class="space-y-4 my-auto px-2">
+              <div class="flex items-baseline gap-3 text-lg">
+                <span class="font-bold text-slate-900">1.</span>
+                <span id="out-rule1" class="font-semibold text-slate-800 sheet-text"></span>
+              </div>
+              <div class="flex items-baseline gap-3 text-lg">
+                <span class="font-bold text-slate-900">2.</span>
+                <span id="out-rule2" class="font-semibold text-slate-800 sheet-text"></span>
+              </div>
+              <div class="flex items-baseline gap-3 text-lg">
+                <span class="font-bold text-slate-900">3.</span>
+                <span id="out-rule3" class="font-semibold text-slate-800 sheet-text"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 하단 팀원 소개 (3x2 그리드) -->
+          <div>
+            <div class="text-xl font-black text-slate-900 mb-2">팀원을 소개합니다</div>
+            <div id="out-membersGrid" class="grid grid-cols-3 gap-x-6 gap-y-3">
+              <!-- JS로 6개 박스 렌더링 -->
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. QR코드 띄우기 화면 -->
+    <section id="view-qr" class="hidden">
+      <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 max-w-md mx-auto text-center space-y-5">
+        <div>
+          <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">교육생 스마트폰 접속용</span>
+          <h2 id="qrTitle" class="text-2xl font-black text-slate-900 mt-2">1팀 워크시트 입장 QR</h2>
+          <p class="text-sm text-slate-500 mt-1">스마트폰 카메라로 QR코드를 스캔하면<br/>별도 로그인 없이 바로 입력 화면이 열립니다.</p>
+        </div>
+
+        <div class="flex justify-center p-4 bg-white border-2 border-slate-200 rounded-2xl w-fit mx-auto">
+          <div id="qrcode"></div>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <p class="text-xs text-slate-400 mb-1">직접 접속 링크</p>
+          <p id="shareUrlText" class="text-xs font-mono text-slate-700 break-all select-all"></p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // =========================================================
+    // [설정 영역] Supabase에서 복사한 URL과 ANON KEY를 입력하세요
+    // =========================================================
+    const SUPABASE_URL = 'https://qdadogyvizwlurcnyvvg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkYWRvZ3l2aXp3bHVyY255dnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDc2ODMsImV4cCI6MjExMDk4MzY4M30.Mb-81BsLFj1necQTVjAIlfsZPONcPrpEvDrs2do-7jE';
+    // =========================================================
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // URL 파라미터(?team=2)가 있으면 해당 팀으로 자동 선택
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentTeam = parseInt(urlParams.get('team')) || 1;
+    document.getElementById('teamSelector').value = currentTeam;
+
+    let isHandwriting = false;
+    let realtimeChannel = null;
+
+    // 초기 빈 데이터 구조
+    function getEmptyData() {
+      return {
+        teamName: '',
+        rule1: '',
+        rule2: '',
+        rule3: '',
+        members: [
+          { role: '', name: '' },
+          { role: '', name: '' },
+          { role: '', name: '' },
+          { role: '', name: '' },
+          { role: '', name: '' },
+          { role: '', name: '' }
+        ]
+      };
+    }
+
+    let currentData = getEmptyData();
+
+    // 입력 카드 6개 및 출력 양식 6개 박스 초기 생성
+    function initGrids() {
+      const inGrid = document.getElementById('memberInputsGrid');
+      const outGrid = document.getElementById('out-membersGrid');
+      inGrid.innerHTML = '';
+      outGrid.innerHTML = '';
+
+      for (let i = 0; i < 6; i++) {
+        // 모바일 입력 카드
+        inGrid.innerHTML += `
+          <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2">
+            <div class="text-xs font-bold text-emerald-700">팀원 ${i + 1}</div>
+            <input type="text" id="in-role-${i}" placeholder="역할 (예: 팀장, 타임키퍼)"
+              class="w-full text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:border-emerald-500 outline-none" />
+            <input type="text" id="in-name-${i}" placeholder="이름 입력"
+              class="w-full text-sm font-bold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:border-emerald-500 outline-none" />
+          </div>
+        `;
+
+        // 원본 양식 박스
+        outGrid.innerHTML += `
+          <div class="border border-slate-600 flex flex-col">
+            <div class="member-header-bar border-b border-slate-600 px-3 py-1.5 flex items-center h-10">
+              <span class="font-bold text-slate-900 text-base mr-2 shrink-0">역할 :</span>
+              <span id="out-role-${i}" class="font-bold text-slate-800 text-base sheet-text truncate"></span>
+            </div>
+            <div class="bg-white px-3 py-2 flex items-center h-12">
+              <span class="font-bold text-slate-900 text-lg mr-2 shrink-0">이름 :</span>
+              <span id="out-name-${i}" class="font-bold text-slate-900 text-xl sheet-text truncate"></span>
+            </div>
+          </div>
+        `;
+      }
+
+      // 모든 입력창에 자동 저장 이벤트(blur / Enter) 연결
+      document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('blur', saveData);
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.target.blur();
+          }
+        });
+      });
+    }
+
+    // 화면에 데이터 반영 (현재 타이핑 중인 칸은 덮어쓰지 않아 충돌 방지)
+    function renderData(data) {
+      currentData = data;
+      const activeId = document.activeElement ? document.activeElement.id : '';
+
+      if (activeId !== 'in-teamName') document.getElementById('in-teamName').value = data.teamName || '';
+      if (activeId !== 'in-rule1') document.getElementById('in-rule1').value = data.rule1 || '';
+      if (activeId !== 'in-rule2') document.getElementById('in-rule2').value = data.rule2 || '';
+      if (activeId !== 'in-rule3') document.getElementById('in-rule3').value = data.rule3 || '';
+
+      document.getElementById('out-teamNum').textContent = currentTeam;
+      document.getElementById('out-teamName').textContent = data.teamName || '';
+      document.getElementById('out-rule1').textContent = data.rule1 || '';
+      document.getElementById('out-rule2').textContent = data.rule2 || '';
+      document.getElementById('out-rule3').textContent = data.rule3 || '';
+
+      for (let i = 0; i < 6; i++) {
+        const m = (data.members && data.members[i]) ? data.members[i] : { role: '', name: '' };
+        if (activeId !== `in-role-${i}`) document.getElementById(`in-role-${i}`).value = m.role || '';
+        if (activeId !== `in-name-${i}`) document.getElementById(`in-name-${i}`).value = m.name || '';
+        document.getElementById(`out-role-${i}`).textContent = m.role || '';
+        document.getElementById(`out-name-${i}`).textContent = m.name || '';
+      }
+    }
+
+    // Supabase에서 현재 팀 데이터 불러오기 & 실시간 구독 시작
+    async function loadTeamSheet(teamNum) {
+      currentTeam = teamNum;
+      const docId = `intro_team_${teamNum}`;
+      setStatus('🟡 불러오는 중...', 'bg-amber-100 text-amber-800');
+
+      // 기존 실시간 채널 해제
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+      }
+
+      // DB 조회
+      const { data, error } = await supabaseClient
+        .from('workshop_sheets')
+        .select('*')
+        .eq('id', docId)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        setStatus('🔴 연결 오류 (키 확인)', 'bg-red-100 text-red-800');
+        return;
+      }
+
+      if (data && data.content) {
+        renderData(data.content);
+      } else {
+        // 데이터가 없으면 빈 데이터로 초기화 생성
+        const empty = getEmptyData();
+        renderData(empty);
+        await supabaseClient.from('workshop_sheets').upsert({
+          id: docId,
+          sheet_type: 'team_intro',
+          team_num: teamNum,
+          content: empty
+        });
+      }
+
+      setStatus(`🟢 ${teamNum}팀 실시간 연결됨`, 'bg-emerald-100 text-emerald-800');
+      updateQRCode();
+
+      // 실시간 변경 감지 구독 (다른 팀원/PC에서 수정 시 즉시 수신)
+      realtimeChannel = supabaseClient
+        .channel(`room_${docId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'workshop_sheets',
+          filter: `id=eq.${docId}`
+        }, (payload) => {
+          if (payload.new && payload.new.content) {
+            renderData(payload.new.content);
+            const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            document.getElementById('lastUpdatedText').textContent = `동기화: ${now}`;
+          }
+        })
+        .subscribe();
+    }
+
+    // 입력값 수집 후 Supabase에 저장
+    async function saveData() {
+      const docId = `intro_team_${currentTeam}`;
+      const updated = {
+        teamName: document.getElementById('in-teamName').value,
+        rule1: document.getElementById('in-rule1').value,
+        rule2: document.getElementById('in-rule2').value,
+        rule3: document.getElementById('in-rule3').value,
+        members: []
+      };
+
+      for (let i = 0; i < 6; i++) {
+        updated.members.push({
+          role: document.getElementById(`in-role-${i}`).value,
+          name: document.getElementById(`in-name-${i}`).value
+        });
+      }
+
+      renderData(updated);
+
+      const { error } = await supabaseClient
+        .from('workshop_sheets')
+        .upsert({
+          id: docId,
+          sheet_type: 'team_intro',
+          team_num: currentTeam,
+          content: updated,
+          updated_at: new Date().toISOString()
+        });
+
+      if (!error) {
+        const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('lastUpdatedText').textContent = `저장됨: ${now}`;
+      }
+    }
+
+    function setStatus(text, classes) {
+      const el = document.getElementById('syncStatus');
+      el.textContent = text;
+      el.className = `text-xs font-bold px-2.5 py-1 rounded-full ${classes}`;
+    }
+
+    // 탭 전환
+    function switchTab(tab) {
+      ['input', 'sheet', 'qr'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          btn.className = 'flex-1 py-2.5 text-sm font-bold border-b-2 border-emerald-600 text-emerald-700 bg-white';
+        } else {
+          btn.className = 'flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800';
+        }
+      });
+      if (tab === 'qr') updateQRCode();
+    }
+
+    // QR코드 생성
+    function updateQRCode() {
+      const baseUrl = window.location.origin + window.location.pathname;
+      const teamUrl = `${baseUrl}?team=${currentTeam}`;
+      document.getElementById('qrTitle').textContent = `${currentTeam}팀 워크시트 입장 QR`;
+      document.getElementById('shareUrlText').textContent = teamUrl;
+
+      const qrContainer = document.getElementById('qrcode');
+      qrContainer.innerHTML = '';
+      new QRCode(qrContainer, {
+        text: teamUrl,
+        width: 220,
+        height: 220,
+        colorDark: '#0f172a',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }
+
+    // 손글씨 폰트 토글
+    function toggleHandwriting() {
+      isHandwriting = !isHandwriting;
+      const btn = document.getElementById('btnHandwriting');
+      btn.textContent = isHandwriting ? '✍️ 손글씨 느낌: ON' : '✍️ 손글씨 느낌: OFF';
+      document.querySelectorAll('.sheet-text').forEach(el => {
+        el.classList.toggle('font-handwriting', isHandwriting);
+      });
+    }
+
+    // 원본 양식 PNG 다운로드
+    function downloadImage() {
+      const target = document.getElementById('printableSheet');
+      html2canvas(target, { scale: 2 }).then(canvas => {
+        const link = document.createElement('a');
+        link.download = `우리팀을소개합니다_${currentTeam}팀.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+
+    // 팀 변경 이벤트
+    document.getElementById('teamSelector').addEventListener('change', (e) => {
+      const newTeam = parseInt(e.target.value);
+      const newUrl = `${window.location.pathname}?team=${newTeam}`;
+      window.history.replaceState({}, '', newUrl);
+      loadTeamSheet(newTeam);
+    });
+
+    // 실행 시작
+    initGrids();
+    loadTeamSheet(currentTeam);
+  </script>
+</body>
+</html>
