@@ -52,6 +52,8 @@
         <span id="syncStatus" class="text-xs font-medium px-2.5 py-1 rounded-full bg-amber-100 text-amber-800">
           🟡 연결 중...
         </span>
+
+        <!-- 강사용: 전체 팀 선택 콤보박스 -->
         <select id="teamSelector" onchange="handleTeamChange(this.value)" class="border-2 border-emerald-600 bg-emerald-50 text-emerald-900 font-bold rounded-lg px-3 py-1 text-sm focus:outline-none">
           <option value="1">1팀</option>
           <option value="2">2팀</option>
@@ -62,6 +64,11 @@
           <option value="7">7팀</option>
           <option value="8">8팀</option>
         </select>
+
+        <!-- 교육생 전용 QR 접속 시: 고정 팀 배지 (다른 팀 이동 불가) -->
+        <span id="lockedTeamBadge" class="hidden border-2 border-emerald-700 bg-emerald-700 text-white font-black rounded-lg px-3 py-1 text-sm">
+          🔒 1팀 전용
+        </span>
       </div>
     </div>
 
@@ -87,7 +94,7 @@
         📄 원본 양식 보기 (발표용)
       </button>
       <button type="button" onclick="switchTab('qr')" id="tab-qr" class="flex-1 py-2.5 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
-        📲 QR코드 띄우기
+        📲 팀별 QR코드 (강사용)
       </button>
     </div>
   </header>
@@ -96,7 +103,7 @@
 
     <!-- 공통 안내 바 -->
     <div id="commonNoticeBar" class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs sm:text-sm text-blue-800 flex items-center justify-between">
-      <span>💡 칸을 입력하고 다른 곳을 누르면 팀원 전체 화면에 즉시 반영됩니다.</span>
+      <span>💡 칸을 입력하고 다른 곳을 누르면 우리 팀원 화면에 즉시 반영됩니다.</span>
       <div class="flex items-center gap-2">
         <span id="lastUpdatedText" class="text-xs text-blue-600 font-medium"></span>
         <button type="button" onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
@@ -367,24 +374,23 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- [공통] 3. QR코드 띄우기 화면                               -->
+    <!-- [강사용] 3. 팀별 전용 QR코드 일괄 보기 (1팀 ~ 8팀)          -->
     <!-- ========================================================= -->
-    <section id="view-qr" class="hidden">
-      <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 max-w-md mx-auto text-center space-y-5">
+    <section id="view-qr" class="hidden space-y-5">
+      <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded-full">교육생 스마트폰 접속용</span>
-          <h2 id="qrTitle" class="text-2xl font-black text-slate-900 mt-2">1팀 워크시트 입장 QR</h2>
-          <p class="text-sm text-slate-500 mt-1">스마트폰 카메라로 QR코드를 스캔하면<br/>현재 선택된 팀의 활동지 화면이 바로 열립니다.</p>
+          <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">팀 간 열람·수정 차단 모드</span>
+          <h2 class="text-xl font-black text-slate-900 mt-1.5">팀별 전용 입장 QR코드 (1팀 ~ 8팀)</h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">각 팀의 QR코드로 접속하면 <strong>해당 팀 화면으로 고정</strong>되며 다른 팀으로 이동할 수 없습니다.</p>
         </div>
+        <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
+          🖨️ 전체 QR 인쇄하기
+        </button>
+      </div>
 
-        <div class="flex justify-center p-4 bg-white border-2 border-slate-200 rounded-2xl w-fit mx-auto">
-          <div id="qrcode"></div>
-        </div>
-
-        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-          <p class="text-xs text-slate-400 mb-1">직접 접속 링크</p>
-          <p id="shareUrlText" class="text-xs font-mono text-slate-700 break-all select-all"></p>
-        </div>
+      <!-- 1팀~8팀 QR 카드 그리드 -->
+      <div id="allTeamsQrGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- JS로 8개 팀 전용 QR 생성 -->
       </div>
     </section>
 
@@ -410,6 +416,8 @@
     const urlParams = new URLSearchParams(window.location.search);
     let currentTeam = parseInt(urlParams.get('team')) || 1;
     let currentSheetType = urlParams.get('type') === 'problem' ? 'problem' : 'intro';
+    // QR로 접속한 경우(mode=student) 다른 팀으로 변경 불가 잠금
+    const isStudentMode = urlParams.get('mode') === 'student';
     let currentViewTab = 'input';
 
     let isHandwriting = false;
@@ -419,6 +427,27 @@
       intro: '우리 팀을 소개 합니다.',
       problem: '1단계 문제발견 및 문제정의'
     };
+
+    function applyAccessModeUI() {
+      const selector = document.getElementById('teamSelector');
+      const badge = document.getElementById('lockedTeamBadge');
+      const qrTab = document.getElementById('tab-qr');
+
+      if (isStudentMode) {
+        // 교육생 모드: 팀 선택 드롭다운 숨김 + 고정 배지 표시 + QR 탭 숨김
+        if (selector) selector.classList.add('hidden');
+        if (badge) {
+          badge.classList.remove('hidden');
+          badge.textContent = `🔒 ${currentTeam}팀 전용`;
+        }
+        if (qrTab) qrTab.classList.add('hidden');
+      } else {
+        // 강사/관리자 모드: 팀 선택 드롭다운 표시 + QR 탭 표시
+        if (selector) selector.classList.remove('hidden');
+        if (badge) badge.classList.add('hidden');
+        if (qrTab) qrTab.classList.remove('hidden');
+      }
+    }
 
     function getEmptyData(type) {
       if (type === 'intro') {
@@ -523,7 +552,8 @@
       if (selector) selector.value = currentTeam;
 
       try {
-        const newUrl = `${window.location.pathname}?team=${currentTeam}&type=${currentSheetType}`;
+        const modeParam = isStudentMode ? '&mode=student' : '';
+        const newUrl = `${window.location.pathname}?team=${currentTeam}&type=${currentSheetType}${modeParam}`;
         window.history.replaceState({}, '', newUrl);
       } catch (e) {}
 
@@ -539,7 +569,7 @@
       });
 
       updateViewVisibility();
-      updateQRCode();
+      if (currentViewTab === 'qr') renderAllTeamQRs();
       renderData(sheetType, getEmptyData(sheetType));
 
       if (!supabaseClient) {
@@ -655,6 +685,7 @@
     }
 
     function handleTeamChange(val) {
+      if (isStudentMode) return; // 교육생 모드에서는 팀 변경 차단
       loadSheet(parseInt(val) || 1, currentSheetType);
     }
 
@@ -663,6 +694,7 @@
     }
 
     function switchTab(tab) {
+      if (isStudentMode && tab === 'qr') return;
       currentViewTab = tab;
       ['input', 'sheet', 'qr'].forEach(t => {
         const btn = document.getElementById(`tab-${t}`);
@@ -674,7 +706,7 @@
         }
       });
       updateViewVisibility();
-      if (tab === 'qr') updateQRCode();
+      if (tab === 'qr') renderAllTeamQRs();
     }
 
     function updateViewVisibility() {
@@ -695,23 +727,38 @@
       });
     }
 
-    function updateQRCode() {
-      const baseUrl = window.location.origin + window.location.pathname;
-      const teamUrl = `${baseUrl}?team=${currentTeam}&type=${currentSheetType}`;
-      document.getElementById('qrTitle').textContent = `${currentTeam}팀 - ${SHEET_TITLES[currentSheetType]}`;
-      document.getElementById('shareUrlText').textContent = teamUrl;
+    // 1팀~8팀 전용 QR코드(mode=student 포함) 일괄 렌더링
+    function renderAllTeamQRs() {
+      const grid = document.getElementById('allTeamsQrGrid');
+      if (!grid) return;
+      grid.innerHTML = '';
 
-      const qrContainer = document.getElementById('qrcode');
-      qrContainer.innerHTML = '';
-      if (typeof QRCode !== 'undefined') {
-        new QRCode(qrContainer, {
-          text: teamUrl,
-          width: 220,
-          height: 220,
-          colorDark: '#0f172a',
-          colorLight: '#ffffff',
-          correctLevel: QRCode.CorrectLevel.M
-        });
+      const baseUrl = window.location.origin + window.location.pathname;
+
+      for (let t = 1; t <= 8; t++) {
+        const studentUrl = `${baseUrl}?team=${t}&mode=student`;
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-2xl p-5 shadow-sm border-2 border-slate-200 flex flex-col items-center text-center space-y-3';
+        card.innerHTML = `
+          <div class="w-full flex items-center justify-between border-b border-slate-100 pb-2">
+            <span class="text-lg font-black text-emerald-800">${t}팀 전용 QR</span>
+            <span class="text-[11px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded">팀 고정</span>
+          </div>
+          <div id="qr-box-${t}" class="p-2 bg-white border border-slate-200 rounded-xl"></div>
+          <p class="text-[11px] font-mono text-slate-500 break-all select-all leading-tight">${studentUrl}</p>
+        `;
+        grid.appendChild(card);
+
+        if (typeof QRCode !== 'undefined') {
+          new QRCode(document.getElementById(`qr-box-${t}`), {
+            text: studentUrl,
+            width: 150,
+            height: 150,
+            colorDark: '#0f172a',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M
+          });
+        }
       }
     }
 
@@ -748,6 +795,7 @@
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      applyAccessModeUI();
       initGrids();
       loadSheet(currentTeam, currentSheetType);
     });
