@@ -150,13 +150,9 @@
                 <!-- 원본 농협 심볼 정밀 벡터 이미지 (SVG) -->
                 <div class="select-none shrink-0 mb-1" aria-label="농협 심볼">
                   <svg width="46" height="44" viewBox="0 0 100 96" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <!-- 좌측 상단 'ㄴ' 획 -->
                     <path d="M12 10 H25 V40 H54 V52 H12 V10 Z" fill="#1e293b"/>
-                    <!-- 우측 상단 'ㅎ'의 독특한 사선/곡선 꼭지 -->
                     <path d="M58 14 C65 11, 74 11, 80 15 L75 24 C70 21, 64 21, 58 24 Z" fill="#1e293b"/>
-                    <!-- 'ㅎ'의 가로획 -->
                     <path d="M46 31 H90 V42 H46 V31 Z" fill="#1e293b"/>
-                    <!-- 'ㅎ'의 하단 동그라미(ㅇ) -->
                     <path fill-rule="evenodd" clip-rule="evenodd" d="M68 48 C81.2548 48 92 58.0736 92 70.5 C92 82.9264 81.2548 93 68 93 C54.7452 93 44 82.9264 44 70.5 C44 58.0736 54.7452 48 68 48 Z M68 59 C61.3726 59 56 64.1487 56 70.5 C56 76.8513 61.3726 82 68 82 C74.6274 82 80 76.8513 80 70.5 C80 64.1487 74.6274 59 68 59 Z" fill="#1e293b"/>
                   </svg>
                 </div>
@@ -228,13 +224,18 @@
     // [설정 영역] Supabase에서 복사한 URL과 ANON KEY를 입력하세요
     // =========================================================
     const SUPABASE_URL = 'https://qdadogyvizwlurcnyvvg.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkYWRvZ3l2aXp3bHVyY255dnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDc2ODMsImV4cCI6MjExMDk4MzY4M30.Mb-81BsLFj1necQTVjAIlfsZPONcPrpEvDrs2do-7jE
-';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFkYWRvZ3l2aXp3bHVyY255dnZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU0MDc2ODMsImV4cCI6MjExMDk4MzY4M30.Mb-81BsLFj1necQTVjAIlfsZPONcPrpEvDrs2do-7jE';
     // =========================================================
 
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let supabaseClient = null;
+    try {
+      if (SUPABASE_URL.startsWith('http')) {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
+    } catch (e) {
+      console.error('Supabase 초기화 오류:', e);
+    }
 
-    // URL 파라미터(?team=2)가 있으면 해당 팀으로 자동 선택
     const urlParams = new URLSearchParams(window.location.search);
     let currentTeam = parseInt(urlParams.get('team')) || 1;
     document.getElementById('teamSelector').value = currentTeam;
@@ -328,60 +329,71 @@
 
     async function loadTeamSheet(teamNum) {
       currentTeam = teamNum;
-      const docId = `intro_team_${teamNum}`;
-      setStatus('🟡 불러오는 중...', 'bg-amber-100 text-amber-800');
+      updateQRCode();
+      renderData(getEmptyData());
 
-      if (realtimeChannel) {
-        supabaseClient.removeChannel(realtimeChannel);
-      }
-
-      const { data, error } = await supabaseClient
-        .from('workshop_sheets')
-        .select('*')
-        .eq('id', docId)
-        .maybeSingle();
-
-      if (error) {
-        console.error(error);
-        setStatus('🔴 연결 오류 (키 확인)', 'bg-red-100 text-red-800');
+      if (!supabaseClient) {
+        setStatus('🔴 Supabase 키 미입력 (코드 확인)', 'bg-red-100 text-red-800');
         return;
       }
 
-      if (data && data.content) {
-        renderData(data.content);
-      } else {
-        const empty = getEmptyData();
-        renderData(empty);
-        await supabaseClient.from('workshop_sheets').upsert({
-          id: docId,
-          sheet_type: 'team_intro',
-          team_num: teamNum,
-          content: empty
-        });
+      const docId = `intro_team_${teamNum}`;
+      setStatus('🟡 불러오는 중...', 'bg-amber-100 text-amber-800');
+
+      try {
+        if (realtimeChannel) {
+          supabaseClient.removeChannel(realtimeChannel);
+        }
+
+        const { data, error } = await supabaseClient
+          .from('workshop_sheets')
+          .select('*')
+          .eq('id', docId)
+          .maybeSingle();
+
+        if (error) {
+          console.error(error);
+          setStatus('🔴 DB 연결 오류 (키/테이블 확인)', 'bg-red-100 text-red-800');
+          return;
+        }
+
+        if (data && data.content) {
+          renderData(data.content);
+        } else {
+          const empty = getEmptyData();
+          renderData(empty);
+          await supabaseClient.from('workshop_sheets').upsert({
+            id: docId,
+            sheet_type: 'team_intro',
+            team_num: teamNum,
+            content: empty
+          });
+        }
+
+        setStatus(`🟢 ${teamNum}팀 실시간 연결됨`, 'bg-emerald-100 text-emerald-800');
+
+        realtimeChannel = supabaseClient
+          .channel(`room_${docId}`)
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'workshop_sheets',
+            filter: `id=eq.${docId}`
+          }, (payload) => {
+            if (payload.new && payload.new.content) {
+              renderData(payload.new.content);
+              const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+              document.getElementById('lastUpdatedText').textContent = `동기화: ${now}`;
+            }
+          })
+          .subscribe();
+      } catch (err) {
+        console.error(err);
+        setStatus('🔴 연결 실패 (새로고침 필요)', 'bg-red-100 text-red-800');
       }
-
-      setStatus(`🟢 ${teamNum}팀 실시간 연결됨`, 'bg-emerald-100 text-emerald-800');
-      updateQRCode();
-
-      realtimeChannel = supabaseClient
-        .channel(`room_${docId}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'workshop_sheets',
-          filter: `id=eq.${docId}`
-        }, (payload) => {
-          if (payload.new && payload.new.content) {
-            renderData(payload.new.content);
-            const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            document.getElementById('lastUpdatedText').textContent = `동기화: ${now}`;
-          }
-        })
-        .subscribe();
     }
 
     async function saveData() {
-      const docId = `intro_team_${currentTeam}`;
       const updated = {
         teamName: document.getElementById('in-teamName').value,
         rule1: document.getElementById('in-rule1').value,
@@ -399,6 +411,9 @@
 
       renderData(updated);
 
+      if (!supabaseClient) return;
+
+      const docId = `intro_team_${currentTeam}`;
       const { error } = await supabaseClient
         .from('workshop_sheets')
         .upsert({
@@ -442,14 +457,16 @@
 
       const qrContainer = document.getElementById('qrcode');
       qrContainer.innerHTML = '';
-      new QRCode(qrContainer, {
-        text: teamUrl,
-        width: 220,
-        height: 220,
-        colorDark: '#0f172a',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.M
-      });
+      if (typeof QRCode !== 'undefined') {
+        new QRCode(qrContainer, {
+          text: teamUrl,
+          width: 220,
+          height: 220,
+          colorDark: '#0f172a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      }
     }
 
     function toggleHandwriting() {
