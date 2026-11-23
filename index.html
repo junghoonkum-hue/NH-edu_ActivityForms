@@ -11,7 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Noto Sans KR', sans-serif; background-color: #f1f5f9; }
-    .font-handwriting { font-family: 'Nanum Pen Script', cursive; font-size: 1.45em !important; line-height: 1.2 !important; color: #1e293b; }
+    .font-handwriting { font-family: 'Nanum Pen Script', cursive; font-size: 1.45em !important; line-height: 1.3 !important; color: #1e293b; }
     .sheet-paper {
       width: 1000px;
       height: 680px;
@@ -24,6 +24,12 @@
     }
     .member-header-bar {
       background: linear-gradient(90deg, #e2e8f0 0%, #f8fafc 50%, #e2e8f0 100%);
+    }
+    /* html2canvas 캡처 시 글자 아랫부분 잘림 방지 */
+    .sheet-text {
+      line-height: 1.45 !important;
+      padding-bottom: 2px;
+      display: inline-block;
     }
   </style>
 </head>
@@ -141,20 +147,20 @@
           <!-- 상단 헤더 -->
           <div>
             <div class="flex items-end justify-between border-b-2 border-slate-400 pb-2 relative">
-              <h2 class="text-4xl font-black tracking-tight text-slate-900">우리 팀을 소개 합니다.</h2>
+              <h2 class="text-4xl font-black tracking-tight text-slate-900 leading-normal">우리 팀을 소개 합니다.</h2>
               <div class="flex items-end gap-5">
-                <div class="text-xl font-bold flex items-end mb-0.5">
+                <div class="text-xl font-bold flex items-baseline mb-1">
                   <span>팀</span>
-                  <span id="out-teamNum" class="inline-block w-28 text-center border-b-2 border-slate-700 ml-2 text-2xl font-black text-emerald-800">1</span>
+                  <span id="out-teamNum" class="inline-block w-28 text-center border-b-2 border-slate-700 ml-2 pb-1 text-2xl font-black text-emerald-800 leading-none">1</span>
                 </div>
-                <!-- 원본 농협 심볼 정밀 벡터 이미지 (SVG) -->
-                  <img src="./nh-nong-logo.png" alt="농협 심볼" class="h-14 w-auto object-contain shrink-0 mb-1" />
+                <!-- 농협 로고 이미지 (h-14 적용) -->
+                <img src="./logo.png" alt="농협 심볼" class="h-14 w-auto object-contain shrink-0 mb-0.5" />
               </div>
             </div>
 
             <!-- 팀 이름 바 -->
-            <div class="gradient-bar border border-slate-400 mt-1 px-4 py-2.5 flex items-center">
-              <span class="text-xl font-extrabold text-slate-900 mr-3 shrink-0">팀 이름 :</span>
+            <div class="gradient-bar border border-slate-400 mt-1 px-4 py-2.5 flex items-baseline">
+              <span class="text-xl font-extrabold text-slate-900 mr-3 shrink-0 leading-normal">팀 이름 :</span>
               <span id="out-teamName" class="text-2xl font-bold text-slate-800 sheet-text"></span>
             </div>
           </div>
@@ -272,15 +278,16 @@
           </div>
         `;
 
+        // truncate 및 고정 높이로 인한 글자 받침 잘림 현상 해결
         outGrid.innerHTML += `
           <div class="border border-slate-600 flex flex-col">
-            <div class="member-header-bar border-b border-slate-600 px-3 py-1.5 flex items-center h-10">
-              <span class="font-bold text-slate-900 text-base mr-2 shrink-0">역할 :</span>
-              <span id="out-role-${i}" class="font-bold text-slate-800 text-base sheet-text truncate"></span>
+            <div class="member-header-bar border-b border-slate-600 px-3 py-2 flex items-baseline min-h-[42px]">
+              <span class="font-bold text-slate-900 text-base mr-2 shrink-0 leading-normal">역할 :</span>
+              <span id="out-role-${i}" class="font-bold text-slate-800 text-base sheet-text"></span>
             </div>
-            <div class="bg-white px-3 py-2 flex items-center h-12">
-              <span class="font-bold text-slate-900 text-lg mr-2 shrink-0">이름 :</span>
-              <span id="out-name-${i}" class="font-bold text-slate-900 text-xl sheet-text truncate"></span>
+            <div class="bg-white px-3 py-2.5 flex items-baseline min-h-[50px]">
+              <span class="font-bold text-slate-900 text-lg mr-2 shrink-0 leading-normal">이름 :</span>
+              <span id="out-name-${i}" class="font-bold text-slate-900 text-xl sheet-text"></span>
             </div>
           </div>
         `;
@@ -471,9 +478,24 @@
       });
     }
 
+    // 캡처 시 글자 위치와 받침이 밀리거나 잘리지 않도록 보정하여 PNG 저장
     function downloadImage() {
       const target = document.getElementById('printableSheet');
-      html2canvas(target, { scale: 2 }).then(canvas => {
+      html2canvas(target, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        onclone: (clonedDoc) => {
+          // 캡처 전용 복제 화면에서 텍스트 수직 위치 미세 상향 보정
+          clonedDoc.querySelectorAll('.sheet-text').forEach(el => {
+            el.style.transform = 'translateY(-3px)';
+          });
+          const teamNumEl = clonedDoc.getElementById('out-teamNum');
+          if (teamNumEl) {
+            teamNumEl.style.transform = 'translateY(-4px)';
+          }
+        }
+      }).then(canvas => {
         const link = document.createElement('a');
         link.download = `우리팀을소개합니다_${currentTeam}팀.png`;
         link.href = canvas.toDataURL('image/png');
