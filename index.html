@@ -65,7 +65,7 @@
           <option value="8">8팀</option>
         </select>
 
-        <!-- 교육생 전용 QR 접속 시: 고정 팀 배지 (다른 팀 이동 불가) -->
+        <!-- 교육생 전용 QR 접속 시: 고정 팀 배지 -->
         <span id="lockedTeamBadge" class="hidden border-2 border-emerald-700 bg-emerald-700 text-white font-black rounded-lg px-3 py-1 text-sm">
           🔒 1팀 전용
         </span>
@@ -101,12 +101,16 @@
 
   <main class="max-w-5xl mx-auto px-4 pt-5">
 
-    <!-- 공통 안내 바 -->
-    <div id="commonNoticeBar" class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs sm:text-sm text-blue-800 flex items-center justify-between">
+    <!-- 공통 안내 및 액션 바 -->
+    <div id="commonNoticeBar" class="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 text-xs sm:text-sm text-blue-800 flex flex-wrap items-center justify-between gap-2">
       <span>💡 칸을 입력하고 다른 곳을 누르면 우리 팀원 화면에 즉시 반영됩니다.</span>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 ml-auto">
         <span id="lastUpdatedText" class="text-xs text-blue-600 font-medium"></span>
-        <button type="button" onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1 rounded-lg shadow-sm">
+        <!-- 강사용 현재 화면 비우기 버튼 -->
+        <button type="button" id="btnResetCurrent" onclick="resetCurrentSheet()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
+          🗑️ 현재 화면 비우기
+        </button>
+        <button type="button" onclick="saveData()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm">
           지금 반영
         </button>
       </div>
@@ -156,9 +160,14 @@
           <button type="button" onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
             ✍️ 손글씨 느낌: OFF
           </button>
-          <button type="button" onclick="downloadImage('printableSheetIntro', '우리팀을소개합니다')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
-            📥 양식 이미지(.png) 저장
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnResetSheetIntro" onclick="resetCurrentSheet()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg">
+              🗑️ 현재 화면 비우기
+            </button>
+            <button type="button" onclick="downloadImage('printableSheetIntro', '우리팀을소개합니다')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              📥 양식 이미지(.png) 저장
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto pb-4 flex justify-start lg:justify-center">
@@ -272,9 +281,14 @@
           <button type="button" onclick="toggleHandwriting()" class="btnHandwriting px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-300 bg-slate-50 hover:bg-slate-100">
             ✍️ 손글씨 느낌: OFF
           </button>
-          <button type="button" onclick="downloadImage('printableSheetProblem', '1단계_문제발견_문제정의')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
-            📥 양식 이미지(.png) 저장
-          </button>
+          <div class="flex items-center gap-2">
+            <button type="button" id="btnResetSheetProblem" onclick="resetCurrentSheet()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg">
+              🗑️ 현재 화면 비우기
+            </button>
+            <button type="button" onclick="downloadImage('printableSheetProblem', '1단계_문제발견_문제정의')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg">
+              📥 양식 이미지(.png) 저장
+            </button>
+          </div>
         </div>
 
         <div class="overflow-x-auto pb-4 flex justify-start lg:justify-center">
@@ -374,24 +388,26 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- [강사용] 3. 팀별 전용 QR코드 일괄 보기 (1팀 ~ 8팀)          -->
+    <!-- [강사용] 3. 팀별 전용 QR코드 및 과정 재사용 초기화 관리      -->
     <!-- ========================================================= -->
     <section id="view-qr" class="hidden space-y-5">
       <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">팀 간 열람·수정 차단 모드</span>
+          <span class="bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">강사용 관리 및 배포</span>
           <h2 class="text-xl font-black text-slate-900 mt-1.5">팀별 전용 입장 QR코드 (1팀 ~ 8팀)</h2>
-          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">각 팀의 QR코드로 접속하면 <strong>해당 팀 화면으로 고정</strong>되며 다른 팀으로 이동할 수 없습니다.</p>
+          <p class="text-xs sm:text-sm text-slate-500 mt-0.5">새 기수 시작 전 우측의 <strong>[전체 팀 데이터 초기화]</strong>를 누르면 모든 양식을 한 번에 비울 수 있습니다.</p>
         </div>
-        <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
-          🖨️ 전체 QR 인쇄하기
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+          <button type="button" onclick="resetAllTeamsAndSheets()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-sm">
+            ⚠️ 전체 팀 데이터 일괄 초기화
+          </button>
+          <button type="button" onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl">
+            🖨️ 전체 QR 인쇄하기
+          </button>
+        </div>
       </div>
 
-      <!-- 1팀~8팀 QR 카드 그리드 -->
-      <div id="allTeamsQrGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- JS로 8개 팀 전용 QR 생성 -->
-      </div>
+      <div id="allTeamsQrGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
     </section>
 
   </main>
@@ -416,7 +432,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     let currentTeam = parseInt(urlParams.get('team')) || 1;
     let currentSheetType = urlParams.get('type') === 'problem' ? 'problem' : 'intro';
-    // QR로 접속한 경우(mode=student) 다른 팀으로 변경 불가 잠금
     const isStudentMode = urlParams.get('mode') === 'student';
     let currentViewTab = 'input';
 
@@ -432,20 +447,28 @@
       const selector = document.getElementById('teamSelector');
       const badge = document.getElementById('lockedTeamBadge');
       const qrTab = document.getElementById('tab-qr');
+      const resetBtns = ['btnResetCurrent', 'btnResetSheetIntro', 'btnResetSheetProblem'];
 
       if (isStudentMode) {
-        // 교육생 모드: 팀 선택 드롭다운 숨김 + 고정 배지 표시 + QR 탭 숨김
         if (selector) selector.classList.add('hidden');
         if (badge) {
           badge.classList.remove('hidden');
           badge.textContent = `🔒 ${currentTeam}팀 전용`;
         }
         if (qrTab) qrTab.classList.add('hidden');
+        // 교육생 모드에서는 초기화 버튼 숨김
+        resetBtns.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.add('hidden');
+        });
       } else {
-        // 강사/관리자 모드: 팀 선택 드롭다운 표시 + QR 탭 표시
         if (selector) selector.classList.remove('hidden');
         if (badge) badge.classList.add('hidden');
         if (qrTab) qrTab.classList.remove('hidden');
+        resetBtns.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('hidden');
+        });
       }
     }
 
@@ -677,6 +700,69 @@
       }
     }
 
+    // [신규 기능 1] 현재 보고 있는 팀의 현재 양식 내용 한 번에 비우기
+    async function resetCurrentSheet() {
+      const sheetName = SHEET_TITLES[currentSheetType];
+      const ok = confirm(`[${currentTeam}팀 - ${sheetName}]\n현재 화면에 입력된 모든 내용을 한 번에 지우시겠습니까?\n(지운 후에는 복구할 수 없습니다.)`);
+      if (!ok) return;
+
+      // 포커스 해제(입력 중인 칸도 즉시 비워지도록 처리)
+      if (document.activeElement) document.activeElement.blur();
+
+      const empty = getEmptyData(currentSheetType);
+      renderData(currentSheetType, empty);
+
+      if (!supabaseClient) return;
+
+      const docId = `${currentSheetType}_team_${currentTeam}`;
+      const { error } = await supabaseClient
+        .from('workshop_sheets')
+        .upsert({
+          id: docId,
+          sheet_type: currentSheetType,
+          team_num: currentTeam,
+          content: empty,
+          updated_at: new Date().toISOString()
+        });
+
+      if (!error) {
+        const now = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('lastUpdatedText').textContent = `초기화됨: ${now}`;
+      }
+    }
+
+    // [신규 기능 2] 다음 과정 재사용을 위해 1~8팀 모든 양식 일괄 비우기
+    async function resetAllTeamsAndSheets() {
+      const ok = confirm(`⚠️ 주의: 다음 과정 재사용을 위해\n1팀부터 8팀까지의 [모든 활동지 내용]을 한 번에 초기화하시겠습니까?\n\n필요한 팀 양식은 먼저 이미지(.png)로 저장해 두셨는지 확인해 주세요.`);
+      if (!ok) return;
+
+      if (!supabaseClient) {
+        alert('Supabase 연결이 필요합니다.');
+        return;
+      }
+
+      const rows = [];
+      ['intro', 'problem'].forEach(type => {
+        for (let t = 1; t <= 8; t++) {
+          rows.push({
+            id: `${type}_team_${t}`,
+            sheet_type: type,
+            team_num: t,
+            content: getEmptyData(type),
+            updated_at: new Date().toISOString()
+          });
+        }
+      });
+
+      const { error } = await supabaseClient.from('workshop_sheets').upsert(rows);
+      if (!error) {
+        renderData(currentSheetType, getEmptyData(currentSheetType));
+        alert('✅ 1팀~8팀의 모든 활동지 내용이 깨끗하게 초기화되었습니다.');
+      } else {
+        alert('초기화 중 오류가 발생했습니다: ' + error.message);
+      }
+    }
+
     function setStatus(text, classes) {
       const el = document.getElementById('syncStatus');
       if (!el) return;
@@ -685,7 +771,7 @@
     }
 
     function handleTeamChange(val) {
-      if (isStudentMode) return; // 교육생 모드에서는 팀 변경 차단
+      if (isStudentMode) return;
       loadSheet(parseInt(val) || 1, currentSheetType);
     }
 
@@ -727,7 +813,6 @@
       });
     }
 
-    // 1팀~8팀 전용 QR코드(mode=student 포함) 일괄 렌더링
     function renderAllTeamQRs() {
       const grid = document.getElementById('allTeamsQrGrid');
       if (!grid) return;
